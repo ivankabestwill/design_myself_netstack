@@ -1,0 +1,11 @@
+[package]
+name = "tcp_reassemble"
+version = "0.1.0"
+authors = ["[ivankabestwill] <[278467214@qq.com]>"]
+
+[dependencies]
+libc=""
+log=""
+log4rs=""
+byteorder = ""
+lazy_static = ""
