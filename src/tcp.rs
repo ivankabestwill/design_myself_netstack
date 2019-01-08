@@ -1,5 +1,5 @@
 
-
+use std::fmt::{Display,Formatter, Result};
 use std::borrow::BorrowMut;
 use std::rc::Rc;
 use std::cell::{RefCell};
@@ -121,6 +121,8 @@ macro_rules! TCP_HAS_TS{
         }
     }
 }
+
+#[macro_export]
 macro_rules! TCP_HAS_MSS{
     ($tcp:expr) => {
         if let Some(ref option) = $tcp.tcp_option{
@@ -134,6 +136,7 @@ macro_rules! TCP_HAS_MSS{
         }
     }
 }
+#[macro_export]
 macro_rules! TCP_HAS_SACK{
     ($tcp:expr) => {
         if let Some(ref option) = $tcp.tcp_option{
@@ -147,6 +150,7 @@ macro_rules! TCP_HAS_SACK{
         }
     }
 }
+#[macro_export]
 macro_rules! TCP_HAS_WSCALE{
     ($tcp:expr) => {
         if let Some(ref option) = $tcp.tcp_option{
@@ -172,6 +176,12 @@ pub struct Tcp{
     pub flags: TCP_FLAGS_TYPE,
     pub ssn_state: TCP_SSN_STATE,
     pub tcp_option: Option<TcpOption>,
+}
+
+impl Display for Tcp{
+    fn fmt(&self, f: &mut Formatter) -> Result{
+        write!(f, "Tcp dst_port [{}] src_port [{}]", self.dst_port, self.src_port)
+    }
 }
 
 pub fn flow_hand_tcp(packet: &mut Packet, flow: &Arc<RwLock<Flow>>) -> bool{
@@ -339,6 +349,18 @@ fn decode_tcp_options(data: &[u8]) -> Option<TcpOption>{
 impl Packet {
     pub fn decode_to_tcp(&mut self) -> bool {
 
+        let ipv4_data_offset = if let Some(ref ldl) = self.data.layer_network{
+            match ldl{
+                LayerNetwork::data_ipv4(ref ipv4) => {ipv4.data_offset},
+                _ => {
+                    error!("decode_to_tcp, Packet.data.layer_network is not ipv4.");
+                    return false;
+                },
+            }
+        }else{
+            error!("decode_to_tcp, Packet.data.layer_network is None.");
+            return false;
+        };
 
         let data = match self.data.data {
             Some(ref t) => { Rc::clone(t) },
@@ -361,6 +383,11 @@ impl Packet {
                     let mut hlen: u8 = 0;
 
                     let mut data_offset = ipv4.data_offset;
+                    if data_offset + 20 > self.pkt_len{
+                        error!("decode_to_tcp, tcp header buf over flow, {} > {}", data_offset+20, self.pkt_len);
+                        return false;
+                    }
+
                     read_u16_from_networkendian_slice(&data.buf[data_offset..(data_offset + 2)], &mut src_port);
                     read_u16_from_networkendian_slice(&data.buf[(data_offset + 2)..(data_offset + 4)], &mut dst_port);
                     read_u8_from_slice(&data.buf[(data_offset + 13)..(data_offset + 14)], &mut flag);
@@ -392,6 +419,10 @@ impl Packet {
                     hlen = hlen * 4;
 
                     let tcp_option = if hlen > 20 {
+                        if data_offset + hlen as usize > self.pkt_len{
+                            error!("decode_to_tcp, tcp option buf over flow, {} > {}", data_offset + hlen as usize, self.pkt_len);
+                            return false;
+                        }
                         decode_tcp_options(&data.buf[(data_offset + 20)..(data_offset + hlen as usize)])
                     } else {
                         None
@@ -412,14 +443,17 @@ impl Packet {
                         win: 0,
                     };
 
-                    {
-                        //let test = packet_data.borrow_mut().layer_transport;
+                    debug!("{}", tcp);
 
-                        //= Some(LayerTransport::data_tcp(Box::new(tcp)));
-                        //if let Some(ref flowhash) = self.flow_hash{
-                        //   *(*(*flowhash).borrow_mut()).src_port = src_port;
-                        //  *(*flowhash).borrow_mut().dst_port = dst_port;
-                        // }
+                    {
+                        /*
+                                                match self.flow_hash{
+                            Some(ref fh) => {fh.borrow_mut().src_port = 1;},
+                            None => {error!("err"); return false;},
+                        }
+                        */
+                        self.data.layer_transport = Some(LayerTransport::data_tcp(Rc::new(tcp)));
+
                     }
 
                     add_flag!(self.flags,PACKET_FLAGS_WANTS_FLOW);
@@ -429,9 +463,9 @@ impl Packet {
                     error!("decode_to_tcp, but Packet.data.LayerNetwork is not ipv4");
                     return false;
                 },
+            }
         }
-    }
-            error!("decode_to_tcp fail.");
-            return false;
+        error!("decode_to_tcp fail.");
+        return false;
     }
 }

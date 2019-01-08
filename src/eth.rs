@@ -1,5 +1,5 @@
 
-
+use std::fmt::{Display,Formatter, Result};
 use std::rc::{Rc};
 
 use ::data::{Data};
@@ -12,4 +12,10 @@ pub struct Eth{
     pub data_offset: usize,
     pub dst_mac: Vec<u8>,
     pub src_mac: Vec<u8>,
+}
+
+impl Display for Eth{
+    fn fmt(&self, f: &mut Formatter) -> Result{
+        write!(f, "Eth dst_mac [{:?}] src_mac [{:?}]", self.dst_mac, self.src_mac)
+    }
 }

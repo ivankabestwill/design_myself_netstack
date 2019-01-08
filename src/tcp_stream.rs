@@ -235,7 +235,8 @@ return;
 }*/
 
 pub fn ssn_set_packet_state(flow: & Arc<RwLock<Flow>>, ssn: & Rc<RefCell<TcpSession>>, state: TCP_SSN_STATE){
-    ssn.borrow_mut().pstate = ssn.borrow().state;
+    let tmp_state = ssn.borrow().state;
+    ssn.borrow_mut().pstate = tmp_state;
     ssn.borrow_mut().state = state;
     match ssn.borrow().state{
         TCP_SSN_ESTABLISHED|TCP_SSN_FIN_WAIT1|TCP_SSN_FIN_WAIT2|TCP_SSN_CLOSING|TCP_SSN_CLOSE_WAIT => {

@@ -38,7 +38,7 @@ use capture::{Capture};
 use data::Data;
 use tools::{print_addr};
 use thread::{ThreadVar, new_thread_var};
-use flow::{flow_hand};
+use flow::{flow_hand, statistic_flow};
 use packet::{Packet, new_packet};
 use packet::{PACKET_FLAGS_NONE, PACKET_FLAGS_TOSERVER_FIRST, PACKET_FLAGS_TOCLIENT_FIRST, PacketData};
 
@@ -59,6 +59,8 @@ fn main() {
     }
 
    loop {
+       statistic_flow();
+
        let data = match mycapture.next() {
            Some(t) => { t },
            None => {

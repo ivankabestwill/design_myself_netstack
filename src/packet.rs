@@ -11,6 +11,7 @@ use ::ipv4::{Ipv4};
 use ::tcp::{Tcp};
 use ::flow::{Flow, FlowHash, new_flow_hash};
 use ::thread::{ThreadVar};
+use ::tools::{print_addr};
 
 
 pub enum LayerDataLink{
@@ -64,11 +65,12 @@ impl Display for Packet{
     fn fmt(&self, f: &mut Formatter) -> Result{
 
         let fh = if let Some(ref flow_hash) = self.flow_hash{
-            format!("src_ip {} src_port {} dst_ip {} dst_port {} protocol {}", flow_hash.borrow().src_ip,
-            flow_hash.borrow().src_port,
-            flow_hash.borrow().dst_ip,
-            flow_hash.borrow().dst_port,
-            flow_hash.borrow().protocol)
+            format!("src_ip {} src_port {} dst_ip {} dst_port {} protocol {}",
+                    print_addr(flow_hash.borrow().src_ip),
+                    flow_hash.borrow().src_port,
+                    print_addr(flow_hash.borrow().dst_ip),
+                    flow_hash.borrow().dst_port,
+                    flow_hash.borrow().protocol)
         }else{
             format!("none")
         };

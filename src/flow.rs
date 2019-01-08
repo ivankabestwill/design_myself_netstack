@@ -403,6 +403,12 @@ pub fn flow_change_protocol(flow: &Arc<RwLock<Flow>>) -> bool{
 
 }
 
+pub fn statistic_flow(){
+    let flow = ALL_FLOW.with(|f|{
+        debug!("============> flow statistic: {}", f.borrow().len());
+    });
+}
+
 pub fn flow_hand(packet: &mut Packet){
 
     if check_flag!(packet.flags, PACKET_FLAGS_PSEUDO_STREAM_END|PACKET_FLAGS_DETECTLOG_FLUSH){
@@ -461,7 +467,7 @@ pub fn flow_hand(packet: &mut Packet){
 
     match flow_hash.borrow().protocol {
         IPPROTO_TCP => {
-            debug!("{} is tcp, dir {}", packet, if check_flag!(packet.flags, PACKET_FLAGS_TOSERVER) {"to server"}else{"to client"});
+            //debug!("{} is tcp, dir {}", packet, if check_flag!(packet.flags, PACKET_FLAGS_TOSERVER) {"to server"}else{"to client"});
 
             if !(tcp_assem_config.detect_enable) &&
                 ((PKT_IS_TOSERVER!(packet) && check_flag!(packet.flags, PACKET_FLAGS_TOSERVER_FIRST)) ||

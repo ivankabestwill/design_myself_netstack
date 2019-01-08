@@ -46,12 +46,14 @@ impl Data{
             packet.flow_hash = Some(Rc::new(RefCell::new(flow_hash)));
 
             let mut data = new_packetdata_data(self);
+
+            debug!("{}", eth);
             data.layer_data_link = Some(LayerDataLink::data_eth(Rc::new(eth)));
             packet.data = data;
 
             return Some(packet);
         }else {
-            warn!("decode_to_eth only accept ipv4.");
+            //warn!("decode_to_eth only accept ipv4.");
             return None;
         }
     }
